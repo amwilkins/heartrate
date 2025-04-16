@@ -25,11 +25,7 @@ Heartrate data is gathered roughly every 15 seconds by the FitBit Inspire 2, mod
 It's unknown whether this is a snapshot, or window average.
 
 
-
-
-
 ## Data
-
 
 ```{python}
 
@@ -60,21 +56,12 @@ The dataframe consists of the datetime in ISO format and bpm, with this analysis
 Other fields are created for ease of parsing later.
 
 A sample of the data format is provided here:
-
-
-
-
 ```{python}
-
+#| echo: false
 print(df.tail(3))
-#| include: false
-# Prep daily data
-daily = df.groupby(['year','month','day'])['bpm'].mean().reset_index()
-daily['date'] = daily['year'].astype(str) + "-" +  daily['month'].astype(str) +  "-" + daily['day'].astype(str)
-daily['date'] = pd.to_datetime(daily['date'])
-daily = daily[['date','bpm']]
 
 ```
+
 
 <!-- Possible dates to mark:   -->
 <!-- 2022-12-02 - 2022-12-11 - Spain Vacation   -->
@@ -85,22 +72,36 @@ daily = daily[['date','bpm']]
 ## Plotting:
 
 ```{python}
+
+
 #| warning: false
 from plotnine import *
 from mizani.breaks import date_breaks
+
+# Prep daily df
+daily = df.groupby(['year','month','day'])['bpm'].mean().reset_index()
+daily['date'] = daily['year'].astype(str) + "-" +  daily['month'].astype(str) +  "-" + daily['day'].astype(str)
+daily['date'] = pd.to_datetime(daily['date'])
+daily = daily[['date','bpm']]
+
+# Plot
 (
     ggplot(daily, aes(x="date", y="bpm", group = 1))
     + geom_line()
     + scale_x_date(breaks=date_breaks(width="3 months"),date_minor_breaks="3 months")
-    + geom_smooth(span=.3)
+    + geom_smooth(span=.2)
     + labs(x = "Date", 
       y = "Heartrate in BPM", 
       title = "Daily Average Heartrate")
-    + theme(
-			axis_text_x=element_text(rotation=25, hjust=1),
-			panel_grid=element_line(color="grey"),
-		)
+		+ theme(
+		 	axis_text_x=element_text(rotation=25, hjust=1),
+		 	panel_grid=element_line(color="grey")
+		 )    
+		+ geom_vline(xintercept=[dt.date(2024,5,1)], linetype="dashed", color="grey")
+		+ annotate(geom="label",fill="grey",color="black",label="Moved to St. Louis", x=dt.date(2024,5,1), y=108)
 )
+
+ 
 ```
 
 ```{python}
@@ -109,7 +110,6 @@ import pandas as pd
 df['hour'] = df['dateTime'].dt.hour
 
 hourly = df.loc[df['year'] == 2024].groupby(['hour'], as_index= False)['bpm'].mean()
-print(hourly.head())
 
 (
     ggplot(hourly[['hour','bpm']], aes(x="hour", y="bpm", group = 1))
@@ -124,9 +124,19 @@ print(hourly.head())
 
 ```
 
+## Last month data
 ```{python}
-this_year = df.loc[df['year'] == 2024]
-print(this_year.head())
+last_month = df.loc[df['year-month'] == "2024-03"].groupby(['hour'], as_index= False)['bpm'].mean()
+
+(
+    ggplot(last_month[['hour','bpm']], aes(x="hour", y="bpm", group = 1))
+    + geom_line()
+		+ scale_x_continuous(limits=(0,24),breaks=range(0, 24, 1))
+    + labs(x = "Hour", 
+      y = "Heartrate in BPM", 
+      title = "Hourly Average Heartrate March 2024")
+		+ theme_538()
+)
 
 
 # (
