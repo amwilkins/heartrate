@@ -9,22 +9,32 @@ project:
     port: 3170
 ---
 
+```{python}
+#| include: False
+import os
+import pandas as pd
+import glob
+import datetime as dt
+
+today =	dt.date.today()
+
+```
+<sub> Updated `{python} dt.date.today().isoformat()` </sub>
+
 Heartrate data is gathered roughly every 15 seconds by the FitBit Inspire 2, model FB418. 
 It's unknown whether this is a snapshot, or window average.
 
 
 
-Data is held as a series of daily json files, which are loaded and concatenated into a Pandas dataframe.
+
 
 ## Data
+
+
 ```{python}
-import os
-import pandas as pd
-import glob
 
 # Don't use scientific notation
 pd.options.display.float_format = '{:.0f}'.format
-
 
 if os.path.exists("./data/heart_rate_combined.pkl"):
     df = pd.read_pickle("./data/heart_rate_combined.pkl")
@@ -42,16 +52,21 @@ else:
     df = df.drop(columns=["value"])
     df.to_pickle("./data/heart_rate_combined.pkl")
 
-print(df.tail(3))
 
 ```
+
+Data is held as a series of daily json files, which are loaded and concatenated into a Pandas dataframe.
 The dataframe consists of the datetime in ISO format and bpm, with this analysis consisting of `{python} len(df)` datapoints.
 Other fields are created for ease of parsing later.
 
+A sample of the data format is provided here:
 
-## Plotting:
+
+
 
 ```{python}
+
+print(df.tail(3))
 #| include: false
 # Prep daily data
 daily = df.groupby(['year','month','day'])['bpm'].mean().reset_index()
@@ -67,6 +82,7 @@ daily = daily[['date','bpm']]
 <!-- 2024-06-01 - Ongoing - Move into new apart``ment   -->
 <!-- 2024-12-07 - 2024-12-14 - Canada Vacation   -->
 
+## Plotting:
 
 ```{python}
 #| warning: false
