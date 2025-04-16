@@ -1,0 +1,132 @@
+---
+title: "FitBit Heart Rate Data"
+format:
+  html:
+    code-fold: true
+jupyter: python3
+project:
+  preview:
+    port: 3170
+---
+
+Heartrate data is gathered roughly every 15 seconds by the FitBit Inspire 2, model FB418. 
+It's unknown whether this is a snapshot, or window average.
+
+
+
+Data is held as a series of daily json files, which are loaded and concatenated into a Pandas dataframe.
+
+## Data
+```{python}
+import os
+import pandas as pd
+import glob
+
+# Don't use scientific notation
+pd.options.display.float_format = '{:.0f}'.format
+
+
+if os.path.exists("./data/heart_rate_combined.pkl"):
+    df = pd.read_pickle("./data/heart_rate_combined.pkl")
+else:
+    file_list = glob.glob("./fitbit_data/heart_rate-*.json")
+    data_frames = [pd.read_json(file) for file in file_list]
+    df = pd.concat(data_frames)
+    df['dateTime'] = df['dateTime'].dt.tz_localize("UTC")
+    df['dateTime'] = df['dateTime'].dt.tz_convert("US/Central")
+    df['year-month'] = df['dateTime'].dt.strftime("%Y-%m")
+    df['year'] = df['dateTime'].dt.year
+    df['month'] = df['dateTime'].dt.month
+    df['day'] = df['dateTime'].dt.day
+    df["bpm"] = [i["bpm"] for i in df["value"]]
+    df = df.drop(columns=["value"])
+    df.to_pickle("./data/heart_rate_combined.pkl")
+
+print(df.tail(3))
+
+```
+The dataframe consists of the datetime in ISO format and bpm, with this analysis consisting of `{python} len(df)` datapoints.
+Other fields are created for ease of parsing later.
+
+
+## Plotting:
+
+```{python}
+#| include: false
+# Prep daily data
+daily = df.groupby(['year','month','day'])['bpm'].mean().reset_index()
+daily['date'] = daily['year'].astype(str) + "-" +  daily['month'].astype(str) +  "-" + daily['day'].astype(str)
+daily['date'] = pd.to_datetime(daily['date'])
+daily = daily[['date','bpm']]
+
+```
+
+<!-- Possible dates to mark:   -->
+<!-- 2022-12-02 - 2022-12-11 - Spain Vacation   -->
+<!-- 2024-05-05 - 2024-05-13 - Italy Vacation   -->
+<!-- 2024-06-01 - Ongoing - Move into new apart``ment   -->
+<!-- 2024-12-07 - 2024-12-14 - Canada Vacation   -->
+
+
+```{python}
+#| warning: false
+from plotnine import *
+from mizani.breaks import date_breaks
+(
+    ggplot(daily, aes(x="date", y="bpm", group = 1))
+    + geom_line()
+    + scale_x_date(breaks=date_breaks(width="3 months"),date_minor_breaks="3 months")
+    + geom_smooth(span=.3)
+    + labs(x = "Date", 
+      y = "Heartrate in BPM", 
+      title = "Daily Average Heartrate")
+    + theme(
+			axis_text_x=element_text(rotation=25, hjust=1),
+			panel_grid=element_line(color="grey"),
+		)
+)
+```
+
+```{python}
+import pandas as pd
+
+df['hour'] = df['dateTime'].dt.hour
+
+hourly = df.loc[df['year'] == 2024].groupby(['hour'], as_index= False)['bpm'].mean()
+print(hourly.head())
+
+(
+    ggplot(hourly[['hour','bpm']], aes(x="hour", y="bpm", group = 1))
+    + geom_line()
+		+ scale_x_continuous(limits=(0,24),breaks=range(0, 24, 1))
+    + labs(x = "Hour", 
+      y = "Heartrate in BPM", 
+      title = "Hourly Average Heartrate over 2024")
+		+ theme_538()
+)
+
+
+```
+
+```{python}
+this_year = df.loc[df['year'] == 2024]
+print(this_year.head())
+
+
+# (
+#     ggplot(hourly[['hour','bpm']], aes(x="hour", y="bpm", group = 1))
+#     + geom_line()
+# 		+ scale_x_continuous(limits=(0,24),breaks=range(0, 24, 1))
+#     + labs(x = "Hour", 
+#       y = "Heartrate in BPM", 
+#       title = "Hourly Average Heartrate over 2024")
+# 		+ theme_538()
+# )
+
+
+```
+
+
+
+
+
