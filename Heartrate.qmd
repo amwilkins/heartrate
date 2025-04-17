@@ -3,6 +3,7 @@ title: "FitBit Heart Rate Data"
 format:
   html:
     code-fold: true
+    embed-resources: true
 jupyter: python3
 project:
   preview:
@@ -21,8 +22,8 @@ today =	dt.date.today()
 ```
 <sub> Updated `{python} dt.date.today().isoformat()` </sub>
 
-Heartrate data is gathered roughly every 15 seconds by the FitBit Inspire 2, model FB418. 
-It's unknown whether this is a snapshot, or window average.
+This covers heartrate data gathered roughly every 15 seconds by the FitBit Inspire 2, model FB418. 
+
 
 
 ## Data
@@ -124,34 +125,23 @@ hourly = df.loc[df['year'] == 2024].groupby(['hour'], as_index= False)['bpm'].me
 
 ```
 
-## Last month data
+## Between 1AM and 5AM
+
+
 ```{python}
-last_month = df.loc[df['year-month'] == "2024-03"].groupby(['hour'], as_index= False)['bpm'].mean()
+last_month = df.loc[(df['year'] == 2024) & (df['hour'].between(0,7))].groupby(['hour'], as_index= False)['bpm'].mean()
 
 (
     ggplot(last_month[['hour','bpm']], aes(x="hour", y="bpm", group = 1))
     + geom_line()
-		+ scale_x_continuous(limits=(0,24),breaks=range(0, 24, 1))
+		+ scale_x_continuous(limits=(0,7),breaks=range(0, 7, 1))
     + labs(x = "Hour", 
       y = "Heartrate in BPM", 
-      title = "Hourly Average Heartrate March 2024")
+      title = "Average heartrate during Sleeping Hours, 2024")
 		+ theme_538()
 )
 
-
-# (
-#     ggplot(hourly[['hour','bpm']], aes(x="hour", y="bpm", group = 1))
-#     + geom_line()
-# 		+ scale_x_continuous(limits=(0,24),breaks=range(0, 24, 1))
-#     + labs(x = "Hour", 
-#       y = "Heartrate in BPM", 
-#       title = "Hourly Average Heartrate over 2024")
-# 		+ theme_538()
-# )
-
-
 ```
-
 
 
 
