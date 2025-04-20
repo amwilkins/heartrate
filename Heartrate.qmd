@@ -106,7 +106,7 @@ daily['date'] = pd.to_datetime(daily['date'])
     ggplot(daily, aes(x="date", y="bpm", group = "year"))
     + geom_line()
     + scale_x_date(breaks=date_breaks(width="3 months"),date_minor_breaks="3 months")
-    + geom_smooth(method="lm")
+    + geom_smooth(data = daily.loc[daily["year"].isin([2023,2024])], method="lm")
     + labs(x = "Date", 
       y = "Heartrate in BPM", 
       title = "Daily Average Heartrate")
