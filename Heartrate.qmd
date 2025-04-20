@@ -5,9 +5,6 @@ format:
     code-fold: true
     embed-resources: true
 jupyter: python3
-project:
-  preview:
-    port: 3170
 ---
 
 ```{python}
@@ -72,9 +69,9 @@ print(df.tail(3))
 
 ## Plotting:
 
+::: {.panel-tabset}
+## Trend
 ```{python}
-
-
 #| warning: false
 from plotnine import *
 from mizani.breaks import date_breaks
@@ -83,7 +80,6 @@ from mizani.breaks import date_breaks
 daily = df.groupby(['year','month','day'])['bpm'].mean().reset_index()
 daily['date'] = daily['year'].astype(str) + "-" +  daily['month'].astype(str) +  "-" + daily['day'].astype(str)
 daily['date'] = pd.to_datetime(daily['date'])
-daily = daily[['date','bpm']]
 
 # Plot
 (
@@ -101,13 +97,31 @@ daily = daily[['date','bpm']]
 		+ geom_vline(xintercept=[dt.date(2024,5,1)], linetype="dashed", color="grey")
 		+ annotate(geom="label",fill="grey",color="black",label="Moved to St. Louis", x=dt.date(2024,5,1), y=108)
 )
-
  
 ```
-
+## Yearly
 ```{python}
-import pandas as pd
+#| warning: false
+(
+    ggplot(daily, aes(x="date", y="bpm", group = "year"))
+    + geom_line()
+    + scale_x_date(breaks=date_breaks(width="3 months"),date_minor_breaks="3 months")
+    + geom_smooth(method="lm")
+    + labs(x = "Date", 
+      y = "Heartrate in BPM", 
+      title = "Daily Average Heartrate")
+		+ theme(
+		 	axis_text_x=element_text(rotation=25, hjust=1),
+		 	panel_grid=element_line(color="grey")
+		 )    
+		+ geom_vline(xintercept=[dt.date(2024,5,1)], linetype="dashed", color="grey")
+		+ annotate(geom="label",fill="grey",color="black",label="Moved to St. Louis", x=dt.date(2024,5,1), y=108)
+)
 
+```
+
+:::
+```{python}
 df['hour'] = df['dateTime'].dt.hour
 
 hourly = df.loc[df['year'] == 2024].groupby(['hour'], as_index= False)['bpm'].mean()
